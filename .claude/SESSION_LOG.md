@@ -154,4 +154,79 @@ Continuacion de sesion - explorar alternativas para app movil de operarios.
 
 ---
 
-*Ultima actualizacion: 2026-01-31*
+---
+
+## Sesion: 2026-02-17
+**Duracion:** ~2 horas
+**Modelo:** Claude Opus 4.5
+
+### Objetivo
+Crear dashboard interactivo de tareas con Supabase y desplegarlo para el equipo.
+
+### Completado
+- [x] Crear dashboard de tareas con Streamlit (tareas_equipo.py)
+- [x] Migrar a Supabase como backend
+- [x] Crear 5 tablas en Supabase (equipo, estados, categorias, metadata, tareas)
+- [x] Poblar 82 tareas desde JSON
+- [x] Corregir funcionalidad de edicion de tareas
+- [x] Crear repositorio GitHub (huerta-lpet-dashboard)
+- [x] Preparar para Streamlit Cloud
+
+### Archivos Creados/Modificados
+
+| Archivo | Accion | Descripcion |
+|---------|--------|-------------|
+| data/tareas_proyecto.json | Creado | 82 tareas del proyecto estructuradas |
+| dashboard/tareas_equipo.py | Creado | Dashboard local con JSON |
+| dashboard/tareas_equipo_supabase.py | Creado | Dashboard con Supabase backend |
+| scripts/supabase_schema.sql | Creado | Schema SQL para Supabase |
+| scripts/populate_supabase.py | Creado | Script para poblar Supabase |
+| .env | Creado | Credenciales Supabase (local) |
+| .streamlit/secrets.toml | Creado | Secrets para Streamlit Cloud |
+| .gitignore | Creado | Exclusiones para Git |
+| requirements.txt | Actualizado | Agregado supabase, python-dotenv |
+
+### Integraciones Configuradas
+
+| Servicio | Estado | Detalles |
+|----------|--------|----------|
+| Supabase | Activo | Project: rzrqkrrfwytkokgpavek |
+| GitHub | Activo | Repo: Fsardi19/huerta-lpet-dashboard |
+| Streamlit Cloud | En proceso | Pendiente deploy final |
+
+### URLs Importantes
+
+- **GitHub:** https://github.com/Fsardi19/huerta-lpet-dashboard
+- **Supabase:** https://supabase.com/dashboard/project/rzrqkrrfwytkokgpavek
+- **Local:** http://localhost:8504
+- **Streamlit Cloud:** https://fsardi19-huerta-lpet-dashboard.streamlit.app (pendiente)
+
+### Datos en Supabase
+
+| Tabla | Registros |
+|-------|-----------|
+| equipo | 7 miembros |
+| estados | 7 estados |
+| categorias | 6 categorias |
+| metadata | 1 registro |
+| tareas | 82 tareas |
+
+### Estado de Tareas (al cierre)
+- Por iniciar: 72
+- En proceso: 8
+- Finalizado: 2
+
+### Pendiente
+- [ ] Completar deploy en Streamlit Cloud (secrets ya configurados)
+- [ ] Compartir URL con el equipo
+- [ ] Monitorear uso y feedback
+
+### Notas
+- El GITHUB_TOKEN en el shell del usuario interferia con gh auth
+- Se resolvio con `unset GITHUB_TOKEN`
+- El push requirio aumentar http.postBuffer por archivos grandes
+- Supabase requirio agregar politicas INSERT para estados y categorias
+
+---
+
+*Ultima actualizacion: 2026-02-17*

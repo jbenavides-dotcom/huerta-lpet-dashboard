@@ -1,11 +1,11 @@
 # Progreso del Proyecto - Huerta Inteligente LPET
 
-**Ultima actualizacion:** 2026-01-31
+**Ultima actualizacion:** 2026-02-17
 **Actualizado por:** Claude Code (Opus 4.5)
 
 ---
 
-## Estado General: En Track
+## Estado General: EN IMPLEMENTACION
 
 ---
 
@@ -28,14 +28,20 @@ El proyecto de planificacion de la Huerta Inteligente LPET ha completado su fase
 | Dashboard Streamlit | 2025-01-31 | 7 paginas interactivas |
 | Mapa interactivo | 2025-01-31 | Plotly con zonas y sensores |
 | Estructura Claude Code | 2025-01-31 | .claude/ configurado |
+| Dashboard tareas equipo | 2026-02-17 | Supabase + Streamlit |
+| Integracion Supabase | 2026-02-17 | 5 tablas, 82 tareas |
+| Repositorio GitHub | 2026-02-17 | Fsardi19/huerta-lpet-dashboard |
+| Documentacion sistema circular | 2026-02-17 | Diagramas flujos |
+| Checklist implementacion | 2026-02-17 | 82 tareas detalladas |
+| Presupuesto detallado | 2026-02-17 | $11.8M COP total |
 
 ### En Progreso
 
 | Feature | % Avance | Bloqueadores | Proximo paso |
 |---------|----------|--------------|--------------|
-| App movil AppSheet | 20% | Ninguno | Crear guia configuracion |
-| Dashboard operativo | 90% | Ninguno | Conectar Google Sheets |
-| Validacion con propietario | 10% | Espera feedback | Presentar dashboard |
+| Deploy Streamlit Cloud | 90% | Configurar secrets | Completar deploy |
+| Construccion fisica | 5% | Materiales | Compras 20 Feb |
+| Contratistas | 0% | Llegan 23 Feb | Preparar hospedaje |
 
 ### Pendientes
 
