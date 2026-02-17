@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": ["Read", "List", "Grep"],
+    "ask": ["Write", "Bash", "Execute"],
+    "deny": ["**/.env", "**/*.pem"]
+  }
+}
