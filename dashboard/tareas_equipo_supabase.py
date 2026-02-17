@@ -70,6 +70,12 @@ def actualizar_tarea(tarea_id, datos):
     response = supabase.table('tareas').update(datos).eq('id', tarea_id).execute()
     return response.data
 
+def crear_tarea(datos):
+    datos['created_at'] = datetime.now().isoformat()
+    datos['updated_at'] = datetime.now().isoformat()
+    response = supabase.table('tareas').insert(datos).execute()
+    return response.data
+
 # ============================================
 # CARGAR DATOS DESDE SUPABASE
 # ============================================
@@ -535,6 +541,7 @@ paginas = [
     "🔗 Dependencias",
     "🎯 Tablero Kanban",
     "📅 Panel del Dia",
+    "➕ Nueva Tarea",
     "✏️ Editar Tarea"
 ]
 pagina_idx = paginas.index(st.session_state['pagina_actual']) if st.session_state['pagina_actual'] in paginas else 0
@@ -1353,6 +1360,82 @@ elif pagina == "✏️ Editar Tarea":
                         st.success("✅ Tarea marcada como finalizada")
                         st.session_state['recargar'] = True
                         st.rerun()
+
+# ============================================
+# PAGINA: NUEVA TAREA
+# ============================================
+elif pagina == "➕ Nueva Tarea":
+    st.title("➕ Crear Nueva Tarea")
+
+    with st.form("form_nueva_tarea", clear_on_submit=True):
+        # Nombre de la tarea
+        nueva_tarea_nombre = st.text_input("Nombre de la tarea *", placeholder="Ej: Comprar manguera para riego")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # Categoria
+            cat_opciones = [f"{c['icono']} {c['nombre']}" for c in categorias]
+            nueva_categoria = st.selectbox("Categoria *", cat_opciones)
+
+            # Responsable
+            resp_opciones = [e['nombre'] for e in equipo]
+            nuevo_responsable = st.selectbox("Responsable *", resp_opciones)
+
+            # Fecha objetivo
+            nueva_fecha = st.date_input("Fecha objetivo *", value=hoy + timedelta(days=3))
+
+        with col2:
+            # Prioridad
+            nueva_prioridad = st.selectbox("Prioridad", ["media", "urgente", "alta", "baja"], index=0)
+
+            # Estado
+            estados_opciones_new = [e['nombre'] for e in estados]
+            nuevo_estado = st.selectbox("Estado inicial", estados_opciones_new, index=0)
+
+            # Dependencias
+            tareas_dep_opciones = [f"{get_categoria_info(t['categoria'])['icono']} {t['tarea'][:50]}" for t in tareas]
+            nuevas_dependencias = st.multiselect("Dependencias (opcional)", tareas_dep_opciones)
+
+        # Notas
+        nuevas_notas = st.text_area("Notas (opcional)", placeholder="Detalles adicionales...")
+
+        submitted = st.form_submit_button("✅ Crear Tarea", type="primary", use_container_width=True)
+
+        if submitted:
+            if not nueva_tarea_nombre.strip():
+                st.error("El nombre de la tarea es obligatorio")
+            else:
+                # Resolver IDs
+                cat_nombre_sel = nueva_categoria.split(' ', 1)[1] if ' ' in nueva_categoria else nueva_categoria
+                cat_id = next((c['id'] for c in categorias if c['nombre'] == cat_nombre_sel), categorias[0]['id'])
+                resp_id = next((e['id'] for e in equipo if e['nombre'] == nuevo_responsable), equipo[0]['id'])
+                estado_id = next((e['id'] for e in estados if e['nombre'] == nuevo_estado), estados[0]['id'])
+
+                # Resolver dependencias
+                deps_ids = []
+                for dep_label in nuevas_dependencias:
+                    for t in tareas:
+                        dep_check = f"{get_categoria_info(t['categoria'])['icono']} {t['tarea'][:50]}"
+                        if dep_check == dep_label:
+                            deps_ids.append(t['id'])
+                            break
+
+                datos_nueva = {
+                    'tarea': nueva_tarea_nombre.strip(),
+                    'categoria': cat_id,
+                    'responsable': resp_id,
+                    'fecha_objetivo': nueva_fecha.strftime("%Y-%m-%d"),
+                    'prioridad': nueva_prioridad,
+                    'estado': estado_id,
+                    'dependencias': deps_ids if deps_ids else None,
+                    'notas': nuevas_notas.strip() if nuevas_notas.strip() else None
+                }
+
+                crear_tarea(datos_nueva)
+                st.success(f"✅ Tarea '{nueva_tarea_nombre}' creada exitosamente en Supabase")
+                st.session_state['recargar'] = True
+                st.rerun()
 
 # ============================================
 # FOOTER
