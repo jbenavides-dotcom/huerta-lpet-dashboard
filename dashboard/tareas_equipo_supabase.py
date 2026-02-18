@@ -1309,8 +1309,17 @@ elif pagina == "✏️ Editar Tarea":
         st.warning("🔒 Debes iniciar sesion para editar tareas. Usa el panel de login en el sidebar.")
         st.stop()
 
-    # Ordenar tareas por categoria + nombre para el selector
-    tareas_ordenadas = sorted(tareas, key=lambda t: (get_categoria_info(t['categoria'])['nombre'], t['tarea']))
+    # Admins ven todas, usuarios normales solo las suyas
+    if es_admin():
+        tareas_editables = tareas
+    else:
+        tareas_editables = [t for t in tareas if t['responsable'] == get_usuario_actual()]
+
+    if not tareas_editables:
+        st.info("No tienes tareas asignadas.")
+        st.stop()
+
+    tareas_ordenadas = sorted(tareas_editables, key=lambda t: (get_categoria_info(t['categoria'])['nombre'], t['tarea']))
     tareas_opciones = {f"{get_categoria_info(t['categoria'])['icono']} {t['tarea'][:60]}": t['id'] for t in tareas_ordenadas}
     opciones_lista = list(tareas_opciones.keys())
 
