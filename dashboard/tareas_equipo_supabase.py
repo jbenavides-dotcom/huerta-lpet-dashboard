@@ -77,6 +77,38 @@ def crear_tarea(datos):
     return response.data
 
 # ============================================
+# AUTENTICACION
+# ============================================
+
+def cargar_passwords():
+    """Carga passwords desde secrets o defaults para desarrollo local"""
+    try:
+        return dict(st.secrets["passwords"])
+    except Exception:
+        # Defaults para desarrollo local - cambiar en produccion
+        return {
+            "felipe": "lpet2026",
+            "katherine": "lpet2026",
+            "william": "lpet2026",
+            "john": "lpet2026",
+            "andres": "lpet2026",
+        }
+
+PASSWORDS = cargar_passwords()
+
+def verificar_login(usuario, password):
+    """Verifica credenciales del usuario"""
+    return PASSWORDS.get(usuario) == password
+
+def usuario_logueado():
+    """Retorna True si hay un usuario logueado"""
+    return st.session_state.get('logged_in', False)
+
+def get_usuario_actual():
+    """Retorna el id del usuario logueado"""
+    return st.session_state.get('usuario_id', None)
+
+# ============================================
 # CARGAR DATOS DESDE SUPABASE
 # ============================================
 
@@ -491,6 +523,32 @@ st.sidebar.markdown(f"""
 
 st.sidebar.markdown("---")
 
+# Login / Sesion
+if usuario_logueado():
+    usuario_actual = get_usuario_actual()
+    nombre_actual = equipo_dict.get(usuario_actual, {}).get('nombre', usuario_actual)
+    st.sidebar.markdown(f"**👤 {nombre_actual}**")
+    if st.sidebar.button("🚪 Cerrar Sesion"):
+        st.session_state['logged_in'] = False
+        st.session_state['usuario_id'] = None
+        st.rerun()
+else:
+    st.sidebar.markdown("**🔒 Iniciar Sesion**")
+    st.sidebar.caption("Inicia sesion para editar y crear tareas")
+    usuarios_login = [e['id'] for e in equipo if e['id'] != 'sin_asignar' and e['id'] != 'contratistas']
+    usuarios_nombres = {e['id']: e['nombre'] for e in equipo if e['id'] in usuarios_login}
+    login_usuario = st.sidebar.selectbox("Usuario", usuarios_login, format_func=lambda x: usuarios_nombres.get(x, x), key="login_user")
+    login_password = st.sidebar.text_input("Contraseña", type="password", key="login_pass")
+    if st.sidebar.button("🔑 Entrar", use_container_width=True):
+        if verificar_login(login_usuario, login_password):
+            st.session_state['logged_in'] = True
+            st.session_state['usuario_id'] = login_usuario
+            st.rerun()
+        else:
+            st.sidebar.error("Contraseña incorrecta")
+
+st.sidebar.markdown("---")
+
 # Filtros en sidebar
 st.sidebar.subheader("Filtros")
 
@@ -541,7 +599,7 @@ paginas = [
     "🔗 Dependencias",
     "🎯 Tablero Kanban",
     "📅 Panel del Dia",
-    "➕ Nueva Tarea",
+    "➕ Nuevo Proyecto",
     "✏️ Editar Tarea"
 ]
 pagina_idx = paginas.index(st.session_state['pagina_actual']) if st.session_state['pagina_actual'] in paginas else 0
@@ -1201,11 +1259,14 @@ elif pagina == "📅 Panel del Dia":
 
                 col_check, col_info = st.columns([0.3, 5])
                 with col_check:
-                    # Checkbox para marcar como finalizada
-                    if st.checkbox("✅", key=f"panel_check_{t['id']}", value=False):
-                        actualizar_tarea(t['id'], {'estado': 'finalizado'})
-                        st.session_state['recargar'] = True
-                        st.rerun()
+                    # Checkbox para marcar como finalizada (solo si logueado)
+                    if usuario_logueado():
+                        if st.checkbox("✅", key=f"panel_check_{t['id']}", value=False):
+                            actualizar_tarea(t['id'], {'estado': 'finalizado'})
+                            st.session_state['recargar'] = True
+                            st.rerun()
+                    else:
+                        st.markdown("🔒")
 
                 with col_info:
                     st.markdown(f"""
@@ -1236,6 +1297,10 @@ elif pagina == "📅 Panel del Dia":
 # ============================================
 elif pagina == "✏️ Editar Tarea":
     st.title("✏️ Editar Tarea")
+
+    if not usuario_logueado():
+        st.warning("🔒 Debes iniciar sesion para editar tareas. Usa el panel de login en el sidebar.")
+        st.stop()
 
     # Ordenar tareas por categoria + nombre para el selector
     tareas_ordenadas = sorted(tareas, key=lambda t: (get_categoria_info(t['categoria'])['nombre'], t['tarea']))
@@ -1362,10 +1427,14 @@ elif pagina == "✏️ Editar Tarea":
                         st.rerun()
 
 # ============================================
-# PAGINA: NUEVA TAREA
+# PAGINA: NUEVO PROYECTO
 # ============================================
-elif pagina == "➕ Nueva Tarea":
-    st.title("➕ Crear Nueva Tarea")
+elif pagina == "➕ Nuevo Proyecto":
+    st.title("➕ Nuevo Proyecto")
+
+    if not usuario_logueado():
+        st.warning("🔒 Debes iniciar sesion para crear proyectos. Usa el panel de login en el sidebar.")
+        st.stop()
 
     with st.form("form_nueva_tarea", clear_on_submit=True):
         # Nombre de la tarea
