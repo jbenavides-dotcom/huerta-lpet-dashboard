@@ -83,7 +83,8 @@ def crear_tarea(datos):
 def cargar_passwords():
     """Carga passwords desde secrets o defaults para desarrollo local"""
     try:
-        return dict(st.secrets["passwords"])
+        # Normalizar keys a minuscula para match con IDs de equipo
+        return {k.lower(): v for k, v in dict(st.secrets["passwords"]).items()}
     except Exception:
         # Defaults para desarrollo local - cambiar en produccion
         return {
