@@ -97,6 +97,8 @@ def cargar_passwords():
 
 PASSWORDS = cargar_passwords()
 
+ADMINS = {'felipe', 'katherine'}
+
 def verificar_login(usuario, password):
     """Verifica credenciales del usuario"""
     return PASSWORDS.get(usuario) == password
@@ -108,6 +110,10 @@ def usuario_logueado():
 def get_usuario_actual():
     """Retorna el id del usuario logueado"""
     return st.session_state.get('usuario_id', None)
+
+def es_admin():
+    """Retorna True si el usuario logueado es admin"""
+    return get_usuario_actual() in ADMINS
 
 # ============================================
 # CARGAR DATOS DESDE SUPABASE
@@ -1364,68 +1370,79 @@ elif pagina == "✏️ Editar Tarea":
                             st.caption(f"→ {b_tarea['tarea'][:40]}")
 
             with col2:
-                st.markdown("### Editar")
+                if es_admin():
+                    # Admin: puede editar todo
+                    st.markdown("### Editar (Admin)")
 
-                # Responsable
-                resp_opciones = [e['nombre'] for e in equipo]
-                resp_actual = get_responsable_nombre(tarea['responsable'])
-                resp_idx = resp_opciones.index(resp_actual) if resp_actual in resp_opciones else 0
+                    resp_opciones = [e['nombre'] for e in equipo]
+                    resp_actual = get_responsable_nombre(tarea['responsable'])
+                    resp_idx = resp_opciones.index(resp_actual) if resp_actual in resp_opciones else 0
+                    nuevo_responsable = st.selectbox("Responsable", resp_opciones, index=resp_idx)
 
-                nuevo_responsable = st.selectbox("Responsable", resp_opciones, index=resp_idx)
+                    try:
+                        fecha_actual = datetime.strptime(tarea['fecha_objetivo'], "%Y-%m-%d").date()
+                    except Exception:
+                        fecha_actual = date.today()
+                    nueva_fecha = st.date_input("Fecha objetivo", value=fecha_actual)
 
-                # Fecha
-                try:
-                    fecha_actual = datetime.strptime(tarea['fecha_objetivo'], "%Y-%m-%d").date()
-                except Exception:
-                    fecha_actual = date.today()
+                    estados_opciones_edit = [e['nombre'] for e in estados]
+                    estado_actual = get_estado_nombre(tarea['estado'])
+                    estado_idx = estados_opciones_edit.index(estado_actual) if estado_actual in estados_opciones_edit else 0
+                    nuevo_estado = st.selectbox("Estado", estados_opciones_edit, index=estado_idx)
 
-                nueva_fecha = st.date_input("Fecha objetivo", value=fecha_actual)
+                    prioridad_opciones_edit = ['urgente', 'alta', 'media', 'baja']
+                    prioridad_idx = prioridad_opciones_edit.index(tarea['prioridad']) if tarea['prioridad'] in prioridad_opciones_edit else 2
+                    nueva_prioridad = st.selectbox("Prioridad", prioridad_opciones_edit, index=prioridad_idx)
 
-                # Estado
-                estados_opciones_edit = [e['nombre'] for e in estados]
-                estado_actual = get_estado_nombre(tarea['estado'])
-                estado_idx = estados_opciones_edit.index(estado_actual) if estado_actual in estados_opciones_edit else 0
+                    nuevas_notas = st.text_area("Notas", value=tarea.get('notas', '') or '')
 
-                nuevo_estado = st.selectbox("Estado", estados_opciones_edit, index=estado_idx)
+                else:
+                    # No admin: solo puede cambiar estado
+                    st.markdown("### Cambiar Estado")
+                    st.caption("Solo puedes cambiar el estado de la tarea")
 
-                # Prioridad
-                prioridad_opciones_edit = ['urgente', 'alta', 'media', 'baja']
-                prioridad_idx = prioridad_opciones_edit.index(tarea['prioridad']) if tarea['prioridad'] in prioridad_opciones_edit else 2
-
-                nueva_prioridad = st.selectbox("Prioridad", prioridad_opciones_edit, index=prioridad_idx)
-
-                # Notas
-                nuevas_notas = st.text_area("Notas", value=tarea.get('notas', '') or '')
+                    estados_opciones_edit = [e['nombre'] for e in estados]
+                    estado_actual = get_estado_nombre(tarea['estado'])
+                    estado_idx = estados_opciones_edit.index(estado_actual) if estado_actual in estados_opciones_edit else 0
+                    nuevo_estado = st.selectbox("Estado", estados_opciones_edit, index=estado_idx)
 
             st.markdown("---")
 
-            col1, col2, col3 = st.columns([1, 1, 2])
+            if es_admin():
+                col1, col2, col3 = st.columns([1, 1, 2])
 
-            with col1:
-                if st.button("💾 Guardar Cambios", type="primary", use_container_width=True):
-                    nuevo_resp_id = next((e['id'] for e in equipo if e['nombre'] == nuevo_responsable), tarea['responsable'])
-                    nuevo_estado_id = next((e['id'] for e in estados if e['nombre'] == nuevo_estado), tarea['estado'])
+                with col1:
+                    if st.button("💾 Guardar Cambios", type="primary", use_container_width=True):
+                        nuevo_resp_id = next((e['id'] for e in equipo if e['nombre'] == nuevo_responsable), tarea['responsable'])
+                        nuevo_estado_id = next((e['id'] for e in estados if e['nombre'] == nuevo_estado), tarea['estado'])
 
-                    datos_actualizados = {
-                        'responsable': nuevo_resp_id,
-                        'fecha_objetivo': nueva_fecha.strftime("%Y-%m-%d"),
-                        'estado': nuevo_estado_id,
-                        'prioridad': nueva_prioridad,
-                        'notas': nuevas_notas
-                    }
+                        datos_actualizados = {
+                            'responsable': nuevo_resp_id,
+                            'fecha_objetivo': nueva_fecha.strftime("%Y-%m-%d"),
+                            'estado': nuevo_estado_id,
+                            'prioridad': nueva_prioridad,
+                            'notas': nuevas_notas
+                        }
 
-                    actualizar_tarea(tarea_id, datos_actualizados)
-                    st.success("✅ Tarea actualizada en Supabase")
-                    st.session_state['recargar'] = True
-                    st.rerun()
-
-            with col2:
-                if tarea['estado'] != 'finalizado':
-                    if st.button("✅ Marcar Finalizada", use_container_width=True):
-                        actualizar_tarea(tarea_id, {'estado': 'finalizado'})
-                        st.success("✅ Tarea marcada como finalizada")
+                        actualizar_tarea(tarea_id, datos_actualizados)
+                        st.success("✅ Tarea actualizada en Supabase")
                         st.session_state['recargar'] = True
                         st.rerun()
+
+                with col2:
+                    if tarea['estado'] != 'finalizado':
+                        if st.button("✅ Marcar Finalizada", use_container_width=True):
+                            actualizar_tarea(tarea_id, {'estado': 'finalizado'})
+                            st.success("✅ Tarea marcada como finalizada")
+                            st.session_state['recargar'] = True
+                            st.rerun()
+            else:
+                if st.button("💾 Guardar Estado", type="primary"):
+                    nuevo_estado_id = next((e['id'] for e in estados if e['nombre'] == nuevo_estado), tarea['estado'])
+                    actualizar_tarea(tarea_id, {'estado': nuevo_estado_id})
+                    st.success("✅ Estado actualizado")
+                    st.session_state['recargar'] = True
+                    st.rerun()
 
 # ============================================
 # PAGINA: NUEVO PROYECTO
@@ -1435,6 +1452,10 @@ elif pagina == "➕ Nuevo Proyecto":
 
     if not usuario_logueado():
         st.warning("🔒 Debes iniciar sesion para crear proyectos. Usa el panel de login en el sidebar.")
+        st.stop()
+
+    if not es_admin():
+        st.warning("🔒 Solo los administradores (Felipe, Katherine) pueden crear nuevos proyectos.")
         st.stop()
 
     with st.form("form_nueva_tarea", clear_on_submit=True):
