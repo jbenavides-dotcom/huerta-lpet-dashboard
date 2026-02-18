@@ -321,8 +321,8 @@ st.markdown("""
         border-left-color: #448aff;
     }
     .baja {
-        background: linear-gradient(135deg, #455a64, #546e7a);
-        border-left-color: #90a4ae;
+        background: linear-gradient(135deg, #00838f, #00acc1);
+        border-left-color: #4dd0e1;
     }
 
     /* Badges */
@@ -344,7 +344,7 @@ st.markdown("""
     .badge-prioridad-urgente { background-color: #dc3545; }
     .badge-prioridad-alta { background-color: #ff9800; }
     .badge-prioridad-media { background-color: #2196f3; }
-    .badge-prioridad-baja { background-color: #9e9e9e; }
+    .badge-prioridad-baja { background-color: #00acc1; }
 
     /* Alertas criticas */
     .alerta-critica {
@@ -1019,7 +1019,7 @@ elif pagina == "🗓️ Linea de Tiempo":
         if gantt_color == "Estado":
             cmap = {get_estado_nombre(e['id']): e['color'] for e in estados}
         elif gantt_color == "Prioridad":
-            cmap = {"urgente": "#dc3545", "alta": "#ff9800", "media": "#2196f3", "baja": "#9e9e9e"}
+            cmap = {"urgente": "#dc3545", "alta": "#ff9800", "media": "#2196f3", "baja": "#00acc1"}
         else:
             cmap = None
 
@@ -1315,7 +1315,7 @@ elif pagina == "📅 Panel del Dia":
             for t in resp_tareas:
                 cat_info = get_categoria_info(t['categoria'])
                 estado_nombre = get_estado_nombre(t['estado'])
-                prioridad_color = {"urgente": "#dc3545", "alta": "#ff9800", "media": "#2196f3", "baja": "#9e9e9e"}.get(t['prioridad'], "#9e9e9e")
+                prioridad_color = {"urgente": "#dc3545", "alta": "#ff9800", "media": "#2196f3", "baja": "#00acc1"}.get(t['prioridad'], "#9e9e9e")
 
                 # Dependencias
                 deps_pendientes = bloqueado_por.get(t['id'], [])
