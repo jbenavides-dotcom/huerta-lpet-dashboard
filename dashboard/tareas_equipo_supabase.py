@@ -754,7 +754,8 @@ if pagina == "📊 Resumen":
                 hole=0.45,
                 marker=dict(colors=[estado_colors_map[k] for k in estado_counts.keys()]),
                 textinfo='label+value',
-                textposition='outside'
+                textposition='outside',
+                hovertemplate='<b>%{label}</b><br>Tareas: %{value}<br>%{percent}<extra></extra>'
             )])
             fig_donut.update_layout(
                 showlegend=False,
@@ -773,7 +774,7 @@ if pagina == "📊 Resumen":
                 cat_estado_data.append({
                     'Categoria': f"{cat_info['icono']} {cat_info['nombre']}",
                     'Estado': get_estado_nombre(t['estado']),
-                    'count': 1
+                    'Tareas': 1
                 })
             df_cat = pd.DataFrame(cat_estado_data)
             if not df_cat.empty:
@@ -783,12 +784,13 @@ if pagina == "📊 Resumen":
                 fig_cat = px.bar(
                     df_cat_grouped,
                     y='Categoria',
-                    x='count',
+                    x='Tareas',
                     color='Estado',
                     orientation='h',
                     color_discrete_map=color_map,
                     category_orders={'Estado': estado_order}
                 )
+                fig_cat.update_traces(hovertemplate='<b>%{y}</b><br>Tareas: %{x}<extra>%{fullData.name}</extra>')
                 fig_cat.update_layout(
                     xaxis_title="Tareas",
                     yaxis_title="",
@@ -805,7 +807,7 @@ if pagina == "📊 Resumen":
                 resp_estado_data.append({
                     'Responsable': get_responsable_nombre(t['responsable']),
                     'Estado': get_estado_nombre(t['estado']),
-                    'count': 1
+                    'Tareas': 1
                 })
             df_resp = pd.DataFrame(resp_estado_data)
             if not df_resp.empty:
@@ -815,12 +817,13 @@ if pagina == "📊 Resumen":
                 fig_resp = px.bar(
                     df_grouped,
                     y='Responsable',
-                    x='count',
+                    x='Tareas',
                     color='Estado',
                     orientation='h',
                     color_discrete_map=color_map,
                     category_orders={'Estado': estado_order}
                 )
+                fig_resp.update_traces(hovertemplate='<b>%{y}</b><br>Tareas: %{x}<extra>%{fullData.name}</extra>')
                 fig_resp.update_layout(
                     xaxis_title="Tareas",
                     yaxis_title="",
@@ -1068,8 +1071,10 @@ elif pagina == "🗓️ Linea de Tiempo":
             df_carga,
             x='Fecha',
             y='Tareas',
-            color_discrete_sequence=['#4CAF50']
+            color_discrete_sequence=['#4CAF50'],
+            labels={'Tareas': 'Tareas', 'Fecha': 'Fecha'}
         )
+        fig_carga.update_traces(hovertemplate='<b>%{x|%d %b %Y}</b><br>Tareas: %{y}<extra></extra>')
         x_hoy_iso = datetime.combine(hoy, datetime.min.time()).isoformat()
         fig_carga.add_shape(
             type="line", x0=x_hoy_iso, x1=x_hoy_iso, y0=0, y1=1,
@@ -1158,6 +1163,7 @@ elif pagina == "🔗 Dependencias":
                 color_continuous_scale='Reds',
                 title="Tareas con mayor impacto de bloqueo"
             )
+            fig_cadenas.update_traces(hovertemplate='<b>%{y}</b><br>Bloquea a: %{x} tareas<extra></extra>')
             fig_cadenas.update_layout(
                 height=max(300, len(cadenas_data) * 35),
                 margin=dict(t=40, b=20),
@@ -1200,6 +1206,7 @@ elif pagina == "🔗 Dependencias":
                 color_continuous_scale='OrRd',
                 title="Top 20 - Mayor impacto en cascada"
             )
+            fig_impacto.update_traces(hovertemplate='<b>%{y}</b><br>Tareas afectadas: %{x}<extra></extra>')
             fig_impacto.update_layout(
                 height=max(350, len(top_20) * 30),
                 margin=dict(t=40, b=20),
