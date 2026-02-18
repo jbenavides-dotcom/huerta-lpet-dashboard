@@ -559,8 +559,11 @@ st.sidebar.markdown("---")
 # Filtros en sidebar
 st.sidebar.subheader("Filtros")
 
-responsables_opciones = ["Todos"] + [e['nombre'] for e in equipo]
-filtro_responsable = st.sidebar.selectbox("Responsable", responsables_opciones, index=0)
+# Responsable: solo visible para admins y usuarios no logueados
+filtro_responsable = "Todos"
+if not usuario_logueado() or es_admin():
+    responsables_opciones = ["Todos"] + [e['nombre'] for e in equipo]
+    filtro_responsable = st.sidebar.selectbox("Responsable", responsables_opciones, index=0)
 
 categorias_opciones = ["Todas"] + [f"{c['icono']} {c['nombre']}" for c in categorias]
 filtro_categoria = st.sidebar.selectbox("Categoria", categorias_opciones, index=0)
@@ -574,7 +577,10 @@ filtro_prioridad = st.sidebar.selectbox("Prioridad", prioridades_opciones, index
 # Aplicar filtros
 tareas_filtradas = tareas.copy()
 
-if filtro_responsable != "Todos":
+# Usuarios normales: filtrar automaticamente por sus tareas
+if usuario_logueado() and not es_admin():
+    tareas_filtradas = [t for t in tareas_filtradas if t['responsable'] == get_usuario_actual()]
+elif filtro_responsable != "Todos":
     resp_id = next((e['id'] for e in equipo if e['nombre'] == filtro_responsable), None)
     if resp_id:
         tareas_filtradas = [t for t in tareas_filtradas if t['responsable'] == resp_id]
