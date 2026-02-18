@@ -624,13 +624,31 @@ st.session_state['pagina_actual'] = pagina
 # PAGINA: RESUMEN
 # ============================================
 if pagina == "📊 Resumen":
+    # Determinar si es vista personal o general
+    vista_personal = usuario_logueado() and not es_admin()
+    if vista_personal:
+        nombre_usuario = equipo_dict.get(get_usuario_actual(), {}).get('nombre', get_usuario_actual())
+        mis_tareas = [t for t in tareas if t['responsable'] == get_usuario_actual()]
+        mis_vencidas = [t for t in mis_tareas if t['id'] in tareas_vencidas_set]
+        resumen_tareas = mis_tareas
+    else:
+        resumen_tareas = tareas
+
     # Header visual
-    st.markdown(f"""
-    <div class="project-header">
-        <h1>🌱 Huerta Inteligente LPET</h1>
-        <p>Finca La Palma y El Tucan - Proyecto Circular de Produccion Agricola</p>
-    </div>
-    """, unsafe_allow_html=True)
+    if vista_personal:
+        st.markdown(f"""
+        <div class="project-header">
+            <h1>👤 Mi Resumen - {nombre_usuario}</h1>
+            <p>Huerta Inteligente LPET - Mis tareas asignadas</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="project-header">
+            <h1>🌱 Huerta Inteligente LPET</h1>
+            <p>Finca La Palma y El Tucan - Proyecto Circular de Produccion Agricola</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     # Mini timeline de hitos
     col_h1, col_h2, col_h3 = st.columns(3)
@@ -655,13 +673,13 @@ if pagina == "📊 Resumen":
 
     st.markdown("")
 
-    # 6 KPIs
-    total_tareas = len(tareas)
-    por_iniciar = len([t for t in tareas if t['estado'] == 'por_iniciar'])
-    en_proceso = len([t for t in tareas if t['estado'] == 'en_proceso'])
-    finalizadas = len([t for t in tareas if t['estado'] == 'finalizado'])
-    bloqueadas = len([t for t in tareas if t['estado'] == 'bloqueado'])
-    n_vencidas_kpi = len(tareas_vencidas_set)
+    # KPIs basados en resumen_tareas
+    total_tareas = len(resumen_tareas)
+    por_iniciar = len([t for t in resumen_tareas if t['estado'] == 'por_iniciar'])
+    en_proceso = len([t for t in resumen_tareas if t['estado'] == 'en_proceso'])
+    finalizadas = len([t for t in resumen_tareas if t['estado'] == 'finalizado'])
+    bloqueadas = len([t for t in resumen_tareas if t['estado'] == 'bloqueado'])
+    n_vencidas_kpi = len([t for t in resumen_tareas if t['id'] in tareas_vencidas_set])
 
     col1, col2, col3, col4, col5, col6 = st.columns(6)
 
@@ -709,9 +727,9 @@ if pagina == "📊 Resumen":
         </div>
         """, unsafe_allow_html=True)
 
-    # Progreso general
+    # Progreso
     progreso = finalizadas / total_tareas if total_tareas > 0 else 0
-    st.markdown("### Progreso General")
+    st.markdown("### Mi Progreso" if vista_personal else "### Progreso General")
     st.progress(progreso)
     st.markdown(f"**{finalizadas}/{total_tareas}** tareas completadas ({progreso*100:.1f}%)")
 
@@ -721,129 +739,158 @@ if pagina == "📊 Resumen":
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
-        # Donut: distribucion por estado
         st.markdown("### Distribucion por Estado")
         estado_counts = {}
         estado_colors_map = {}
-        for t in tareas:
+        for t in resumen_tareas:
             ename = get_estado_nombre(t['estado'])
             estado_counts[ename] = estado_counts.get(ename, 0) + 1
             estado_colors_map[ename] = get_estado_color(t['estado'])
 
-        fig_donut = go.Figure(data=[go.Pie(
-            labels=list(estado_counts.keys()),
-            values=list(estado_counts.values()),
-            hole=0.45,
-            marker=dict(colors=[estado_colors_map[k] for k in estado_counts.keys()]),
-            textinfo='label+value',
-            textposition='outside'
-        )])
-        fig_donut.update_layout(
-            showlegend=False,
-            margin=dict(t=20, b=20, l=20, r=20),
-            height=320
-        )
-        st.plotly_chart(fig_donut, use_container_width=True)
+        if estado_counts:
+            fig_donut = go.Figure(data=[go.Pie(
+                labels=list(estado_counts.keys()),
+                values=list(estado_counts.values()),
+                hole=0.45,
+                marker=dict(colors=[estado_colors_map[k] for k in estado_counts.keys()]),
+                textinfo='label+value',
+                textposition='outside'
+            )])
+            fig_donut.update_layout(
+                showlegend=False,
+                margin=dict(t=20, b=20, l=20, r=20),
+                height=320
+            )
+            st.plotly_chart(fig_donut, use_container_width=True)
 
     with col_g2:
-        # Barras horizontales: tareas por responsable coloreadas por estado
-        st.markdown("### Tareas por Responsable")
-        resp_estado_data = []
-        for t in tareas:
-            resp_estado_data.append({
-                'Responsable': get_responsable_nombre(t['responsable']),
-                'Estado': get_estado_nombre(t['estado']),
-                'count': 1
-            })
-        df_resp = pd.DataFrame(resp_estado_data)
-        if not df_resp.empty:
-            df_grouped = df_resp.groupby(['Responsable', 'Estado']).sum().reset_index()
-            # Ordered states for consistent coloring
-            estado_order = [get_estado_nombre(e['id']) for e in estados]
-            color_map = {get_estado_nombre(e['id']): e['color'] for e in estados}
-            fig_resp = px.bar(
-                df_grouped,
-                y='Responsable',
-                x='count',
-                color='Estado',
-                orientation='h',
-                color_discrete_map=color_map,
-                category_orders={'Estado': estado_order}
-            )
-            fig_resp.update_layout(
-                xaxis_title="Tareas",
-                yaxis_title="",
-                margin=dict(t=20, b=20, l=20, r=20),
-                height=320,
-                legend=dict(orientation="h", yanchor="bottom", y=-0.3)
-            )
-            st.plotly_chart(fig_resp, use_container_width=True)
+        if vista_personal:
+            # Usuario normal: grafico por categoria
+            st.markdown("### Mis Tareas por Categoria")
+            cat_estado_data = []
+            for t in resumen_tareas:
+                cat_info = get_categoria_info(t['categoria'])
+                cat_estado_data.append({
+                    'Categoria': f"{cat_info['icono']} {cat_info['nombre']}",
+                    'Estado': get_estado_nombre(t['estado']),
+                    'count': 1
+                })
+            df_cat = pd.DataFrame(cat_estado_data)
+            if not df_cat.empty:
+                df_cat_grouped = df_cat.groupby(['Categoria', 'Estado']).sum().reset_index()
+                estado_order = [get_estado_nombre(e['id']) for e in estados]
+                color_map = {get_estado_nombre(e['id']): e['color'] for e in estados}
+                fig_cat = px.bar(
+                    df_cat_grouped,
+                    y='Categoria',
+                    x='count',
+                    color='Estado',
+                    orientation='h',
+                    color_discrete_map=color_map,
+                    category_orders={'Estado': estado_order}
+                )
+                fig_cat.update_layout(
+                    xaxis_title="Tareas",
+                    yaxis_title="",
+                    margin=dict(t=20, b=20, l=20, r=20),
+                    height=320,
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.3)
+                )
+                st.plotly_chart(fig_cat, use_container_width=True)
+        else:
+            # Admin: grafico por responsable
+            st.markdown("### Tareas por Responsable")
+            resp_estado_data = []
+            for t in resumen_tareas:
+                resp_estado_data.append({
+                    'Responsable': get_responsable_nombre(t['responsable']),
+                    'Estado': get_estado_nombre(t['estado']),
+                    'count': 1
+                })
+            df_resp = pd.DataFrame(resp_estado_data)
+            if not df_resp.empty:
+                df_grouped = df_resp.groupby(['Responsable', 'Estado']).sum().reset_index()
+                estado_order = [get_estado_nombre(e['id']) for e in estados]
+                color_map = {get_estado_nombre(e['id']): e['color'] for e in estados}
+                fig_resp = px.bar(
+                    df_grouped,
+                    y='Responsable',
+                    x='count',
+                    color='Estado',
+                    orientation='h',
+                    color_discrete_map=color_map,
+                    category_orders={'Estado': estado_order}
+                )
+                fig_resp.update_layout(
+                    xaxis_title="Tareas",
+                    yaxis_title="",
+                    margin=dict(t=20, b=20, l=20, r=20),
+                    height=320,
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.3)
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
 
     st.markdown("---")
 
-    # Semaforo por categoria
+    # Semaforo por categoria (solo las que tienen tareas del usuario)
     st.markdown("### Semaforo por Categoria")
-    cat_cols = st.columns(min(len(categorias), 6))
+    cats_con_tareas = [cat for cat in categorias if any(t['categoria'] == cat['id'] for t in resumen_tareas)]
 
-    for idx, cat in enumerate(categorias):
-        col_idx = idx % len(cat_cols)
-        with cat_cols[col_idx]:
-            cat_tareas = [t for t in tareas if t['categoria'] == cat['id']]
-            cat_total = len(cat_tareas)
-            cat_completadas = len([t for t in cat_tareas if t['estado'] == 'finalizado'])
-            cat_vencidas = len([t for t in cat_tareas if t['id'] in tareas_vencidas_set])
+    if cats_con_tareas:
+        cat_cols = st.columns(min(len(cats_con_tareas), 6))
+        for idx, cat in enumerate(cats_con_tareas):
+            col_idx = idx % len(cat_cols)
+            with cat_cols[col_idx]:
+                cat_tareas = [t for t in resumen_tareas if t['categoria'] == cat['id']]
+                cat_total = len(cat_tareas)
+                cat_completadas = len([t for t in cat_tareas if t['estado'] == 'finalizado'])
+                cat_vencidas = len([t for t in cat_tareas if t['id'] in tareas_vencidas_set])
 
-            if cat_total == 0:
-                pct = 0
-            else:
-                pct = cat_completadas / cat_total
+                pct = cat_completadas / cat_total if cat_total > 0 else 0
 
-            # Semaforo
-            if cat_vencidas > 0:
-                semaforo = "🔴"
-                semaforo_class = "semaforo-rojo"
-            elif pct >= 0.7:
-                semaforo = "🟢"
-                semaforo_class = "semaforo-verde"
-            elif pct >= 0.3:
-                semaforo = "🟡"
-                semaforo_class = "semaforo-amarillo"
-            else:
-                semaforo = "🟡"
-                semaforo_class = "semaforo-amarillo"
+                if cat_vencidas > 0:
+                    semaforo = "🔴"
+                elif pct >= 0.7:
+                    semaforo = "🟢"
+                elif pct >= 0.3:
+                    semaforo = "🟡"
+                else:
+                    semaforo = "🟡"
 
-            st.markdown(f"""
-            <div style="text-align:center; padding: 10px; border-radius: 8px; background: #fafafa; margin-bottom: 8px;">
-                <div style="font-size: 1.5em;">{cat['icono']}</div>
-                <div style="font-weight: 600; font-size: 0.85em;">{cat['nombre']}</div>
-                <div style="font-size: 1.3em;">{semaforo}</div>
-                <div style="font-size: 0.8em; color: #666;">{cat_completadas}/{cat_total}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            if cat_total > 0:
-                st.progress(pct)
+                st.markdown(f"""
+                <div style="text-align:center; padding: 10px; border-radius: 8px; background: #fafafa; margin-bottom: 8px;">
+                    <div style="font-size: 1.5em;">{cat['icono']}</div>
+                    <div style="font-weight: 600; font-size: 0.85em;">{cat['nombre']}</div>
+                    <div style="font-size: 1.3em;">{semaforo}</div>
+                    <div style="font-size: 0.8em; color: #666;">{cat_completadas}/{cat_total}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                if cat_total > 0:
+                    st.progress(pct)
 
     st.markdown("---")
 
-    # Tareas urgentes mejorada
+    # Tareas urgentes
     st.markdown("### 🚨 Tareas Urgentes (Vencidas o Hoy)")
 
     tareas_urgentes = []
-    for t in tareas:
+    for t in resumen_tareas:
         if t['estado'] == 'finalizado':
             continue
         try:
             fecha_obj = datetime.strptime(t['fecha_objetivo'], "%Y-%m-%d").date()
             dias_retraso = (hoy - fecha_obj).days
             if fecha_obj <= hoy or t['prioridad'] == 'urgente':
-                tareas_urgentes.append({
+                fila = {
                     'Tarea': t['tarea'],
                     'Fecha': t['fecha_objetivo'],
                     'Dias Retraso': max(dias_retraso, 0),
-                    'Responsable': get_responsable_nombre(t['responsable']),
                     'Estado': get_estado_nombre(t['estado']),
                     'Prioridad': t['prioridad']
-                })
+                }
+                if not vista_personal:
+                    fila['Responsable'] = get_responsable_nombre(t['responsable'])
+                tareas_urgentes.append(fila)
         except Exception:
             pass
 
