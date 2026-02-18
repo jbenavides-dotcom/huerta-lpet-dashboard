@@ -738,23 +738,27 @@ if pagina == "📊 Resumen":
     # Graficos Plotly
     col_g1, col_g2 = st.columns(2)
 
-    # Paleta cyan para graficos
-    CYAN_SHADES = ['#004d40', '#00695c', '#00838f', '#00acc1', '#26c6da', '#4dd0e1', '#80deea']
+    # Color map: colores originales de Supabase, pero "por_iniciar" usa cyan
+    def get_estado_color_chart(estado_id):
+        if estado_id == 'por_iniciar':
+            return '#00acc1'
+        return get_estado_color(estado_id)
 
     with col_g1:
         st.markdown("### Distribucion por Estado")
         estado_counts = {}
+        estado_colors_map = {}
         for t in resumen_tareas:
             ename = get_estado_nombre(t['estado'])
             estado_counts[ename] = estado_counts.get(ename, 0) + 1
+            estado_colors_map[ename] = get_estado_color_chart(t['estado'])
 
         if estado_counts:
-            cyan_colors = [CYAN_SHADES[i % len(CYAN_SHADES)] for i in range(len(estado_counts))]
             fig_donut = go.Figure(data=[go.Pie(
                 labels=list(estado_counts.keys()),
                 values=list(estado_counts.values()),
                 hole=0.45,
-                marker=dict(colors=cyan_colors),
+                marker=dict(colors=[estado_colors_map[k] for k in estado_counts.keys()]),
                 textinfo='label+value',
                 textposition='outside',
                 hovertemplate='<b>%{label}</b><br>Tareas: %{value}<br>%{percent}<extra></extra>'
@@ -782,14 +786,14 @@ if pagina == "📊 Resumen":
             if not df_cat.empty:
                 df_cat_grouped = df_cat.groupby(['Categoria', 'Estado']).sum().reset_index()
                 estado_order = [get_estado_nombre(e['id']) for e in estados]
-                cyan_map = {get_estado_nombre(e['id']): CYAN_SHADES[i % len(CYAN_SHADES)] for i, e in enumerate(estados)}
+                color_map = {get_estado_nombre(e['id']): get_estado_color_chart(e['id']) for e in estados}
                 fig_cat = px.bar(
                     df_cat_grouped,
                     y='Categoria',
                     x='Tareas',
                     color='Estado',
                     orientation='h',
-                    color_discrete_map=cyan_map,
+                    color_discrete_map=color_map,
                     category_orders={'Estado': estado_order}
                 )
                 fig_cat.update_traces(hovertemplate='<b>%{y}</b><br>Tareas: %{x}<extra>%{fullData.name}</extra>')
@@ -815,14 +819,14 @@ if pagina == "📊 Resumen":
             if not df_resp.empty:
                 df_grouped = df_resp.groupby(['Responsable', 'Estado']).sum().reset_index()
                 estado_order = [get_estado_nombre(e['id']) for e in estados]
-                cyan_map = {get_estado_nombre(e['id']): CYAN_SHADES[i % len(CYAN_SHADES)] for i, e in enumerate(estados)}
+                color_map = {get_estado_nombre(e['id']): get_estado_color_chart(e['id']) for e in estados}
                 fig_resp = px.bar(
                     df_grouped,
                     y='Responsable',
                     x='Tareas',
                     color='Estado',
                     orientation='h',
-                    color_discrete_map=cyan_map,
+                    color_discrete_map=color_map,
                     category_orders={'Estado': estado_order}
                 )
                 fig_resp.update_traces(hovertemplate='<b>%{y}</b><br>Tareas: %{x}<extra>%{fullData.name}</extra>')
