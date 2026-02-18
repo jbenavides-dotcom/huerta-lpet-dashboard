@@ -861,11 +861,11 @@ if pagina == "📊 Resumen":
                     semaforo = "🟡"
 
                 st.markdown(f"""
-                <div style="text-align:center; padding: 10px; border-radius: 8px; background: #fafafa; margin-bottom: 8px;">
-                    <div style="font-size: 1.5em;">{cat['icono']}</div>
-                    <div style="font-weight: 600; font-size: 0.85em;">{cat['nombre']}</div>
-                    <div style="font-size: 1.3em;">{semaforo}</div>
-                    <div style="font-size: 0.8em; color: #666;">{cat_completadas}/{cat_total}</div>
+                <div style="text-align:center; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, #1a1a2e, #16213e); margin-bottom: 8px; border: 1px solid #2a2a4a;">
+                    <div style="font-size: 1.8em;">{cat['icono']}</div>
+                    <div style="font-weight: 700; font-size: 0.95em; color: #ffffff; margin: 6px 0;">{cat['nombre']}</div>
+                    <div style="font-size: 1.5em;">{semaforo}</div>
+                    <div style="font-size: 0.85em; color: #e0e0e0; font-weight: 600;">{cat_completadas}/{cat_total} completadas</div>
                 </div>
                 """, unsafe_allow_html=True)
                 if cat_total > 0:
