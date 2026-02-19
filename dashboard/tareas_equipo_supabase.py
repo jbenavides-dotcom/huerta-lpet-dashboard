@@ -763,13 +763,17 @@ if pagina == "📊 Resumen":
                 hole=0.45,
                 marker=dict(colors=[estado_colors_map[k] for k in estado_counts.keys()]),
                 textinfo='label+value',
-                textposition='outside',
+                textposition='inside',
+                insidetextorientation='horizontal',
                 hovertemplate='<b>%{label}</b><br>Tareas: %{value}<br>%{percent}<extra></extra>'
             )])
             fig_donut.update_layout(
-                showlegend=False,
-                margin=dict(t=20, b=20, l=20, r=20),
-                height=320
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5, font=dict(size=11)),
+                margin=dict(t=10, b=40, l=10, r=10),
+                height=280,
+                uniformtext_minsize=10,
+                uniformtext_mode='hide'
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
