@@ -624,15 +624,18 @@ st.session_state['pagina_actual'] = pagina
 # PAGINA: RESUMEN
 # ============================================
 if pagina == "📊 Resumen":
-    # Determinar si es vista personal o general
+    # Usar tareas filtradas para todos los graficos (responde a filtros del sidebar)
+    resumen_tareas = tareas_filtradas
+
+    # Vista personal: usuario no-admin, o admin filtrando por responsable especifico
     vista_personal = usuario_logueado() and not es_admin()
-    if vista_personal:
+    if not vista_personal and filtro_responsable != "Todos":
+        vista_personal = True
+        nombre_usuario = filtro_responsable
+    elif vista_personal:
         nombre_usuario = equipo_dict.get(get_usuario_actual(), {}).get('nombre', get_usuario_actual())
-        mis_tareas = [t for t in tareas if t['responsable'] == get_usuario_actual()]
-        mis_vencidas = [t for t in mis_tareas if t['id'] in tareas_vencidas_set]
-        resumen_tareas = mis_tareas
     else:
-        resumen_tareas = tareas
+        nombre_usuario = ""
 
     # Header visual
     if vista_personal:
