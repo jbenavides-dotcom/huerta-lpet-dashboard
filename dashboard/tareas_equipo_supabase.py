@@ -913,6 +913,70 @@ if pagina == "📊 Resumen":
     else:
         st.success("No hay tareas urgentes pendientes")
 
+    # Todas las actividades con Ver mas / Ver menos
+    st.markdown("---")
+    st.markdown("### 📋 Todas las Actividades")
+
+    TAREAS_INICIALES = 5
+
+    if 'mostrar_todas' not in st.session_state:
+        st.session_state['mostrar_todas'] = False
+
+    tareas_resumen_sorted = sorted(resumen_tareas, key=lambda x: x.get('fecha_objetivo') or '9999-99-99')
+    total_resumen = len(tareas_resumen_sorted)
+
+    if st.session_state['mostrar_todas']:
+        tareas_a_mostrar = tareas_resumen_sorted
+    else:
+        tareas_a_mostrar = tareas_resumen_sorted[:TAREAS_INICIALES]
+
+    for tarea in tareas_a_mostrar:
+        cat_info = get_categoria_info(tarea['categoria'])
+        estado_color = get_estado_color(tarea['estado'])
+        estado_nombre = get_estado_nombre(tarea['estado'])
+        resp_nombre = get_responsable_nombre(tarea['responsable'])
+        prioridad = tarea['prioridad']
+
+        fecha_tag = ""
+        try:
+            fecha_obj = datetime.strptime(tarea['fecha_objetivo'], "%Y-%m-%d").date()
+            if tarea['estado'] != 'finalizado':
+                if fecha_obj < hoy:
+                    dias_r = (hoy - fecha_obj).days
+                    fecha_tag = f'<span style="color:#ffcdd2;font-weight:bold;"> ⚠️ {dias_r}d atraso</span>'
+                elif fecha_obj == hoy:
+                    fecha_tag = '<span style="color:#ffe082;font-weight:bold;"> 📌 HOY</span>'
+        except Exception:
+            pass
+
+        st.markdown(f"""
+        <div class="task-card {prioridad}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="flex:1;">
+                    <strong>{cat_info['icono']} {tarea['tarea']}</strong>
+                </div>
+                <div style="text-align:right; min-width:200px;">
+                    <span class="badge-estado" style="background-color: {estado_color};">{estado_nombre}</span>
+                    <small> 👤 {resp_nombre} | 📅 {tarea['fecha_objetivo']}{fecha_tag}</small>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    if total_resumen > TAREAS_INICIALES:
+        col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 2])
+        with col_btn2:
+            if st.session_state['mostrar_todas']:
+                if st.button("🔼 Ver menos", use_container_width=True):
+                    st.session_state['mostrar_todas'] = False
+                    st.rerun()
+            else:
+                if st.button(f"🔽 Ver mas ({total_resumen - TAREAS_INICIALES} restantes)", use_container_width=True):
+                    st.session_state['mostrar_todas'] = True
+                    st.rerun()
+    elif total_resumen == 0:
+        st.info("No hay actividades para mostrar con los filtros seleccionados.")
+
 # ============================================
 # PAGINA: LISTA DE TAREAS
 # ============================================
